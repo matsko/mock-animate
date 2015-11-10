@@ -5,9 +5,18 @@ function triggerReflow(): int {
   return document.body.clientWidth + 1; 
 }
 
-function normalizeStyleTarget(value, selectorRegistry) {
+function fetch(url): Promise {
+  return new Promise((resolve) => {
+    var request = new XMLHttpRequest();
+    request.addEventListener("load", () => resolve(request.responseText));
+    request.open("GET", url);
+    request.send(null);
+  });
+}
+
+function normalizeStyleTarget(value, selectorRegistry: CssMap) {
   if (isObject(value)) return value;
-  return selectorRegistry[value] || {};
+  return selectorRegistry.lookup(value);
 }
 
 function prepareTestElement() {
@@ -32,8 +41,66 @@ function pickStyles(element) {
   return data;
 }
 
+class CssMap {
+  static fromStylesheet(filePath: string): Promise<CssMap> {
+    return fetch(filePath).then((styles) => {
+      return CssMap.fromStyles(styles);
+    });
+  }
+
+  static fromStyles(styles): CssMap {
+    var styleTag = document.createElement('style'); 
+    styleTag.setAttribute('type','text/css');
+    styleTag.innerHTML = styles;
+    document.body.append(styleTag);
+
+    var rules = styleTag['sheet']['rules'];
+    var classMap = {};
+
+    for (var i = 0; i < rules.length; i++) {
+      var rule = rules[i];
+      var selector = rule.selectorText;
+      if (selector[0] == ".") {
+        var stylesEntry = {};
+        var properties = CssMap._parsePropertiesFromCss(rule.cssText);
+        properties.forEach((property) => {
+          stylesEntry[property] = rule.style[property];
+        });
+        classMap[selector] = stylesEntry;
+      }
+    };
+
+    styleTag.remove();
+    return new CssMap(classMap);
+  }
+
+  static _parsePropertiesFromCss(rule) {
+    var firstBrace = rule.indexOf('{');
+    var inner = rule.substr(firstBrace);
+    return inner.match(/\b\w+(?=:)/g);
+  }
+
+  constructor(private _values) {}
+
+  lookup(className: string) {
+    var value = this._values[string];
+    if (!value) {
+      throw new Error("...");
+    }
+    return value;
+  }
+}
+
 class CssColor {
   constructor(private _colorStyle) {}
+
+  static equals(c1, c2) {
+    return c1.hex == c2.hex;
+  }
+
+  static related(c1, c2, tolerance) {
+    
+  }
 
   get rgb() {
   }
@@ -46,7 +113,7 @@ class ElementCssInspector {
   private _hasTransitionAnimation: boolean = null;
   private _hasKeyframeAnimation: boolean = null;
 
-  constructor(private _element) {}
+  constructor(private _element: HTMLElement) {}
 
   _prepValuesMap(start, end) {
     var i, valuesMap = {};
@@ -175,7 +242,7 @@ class ElementCssInspector {
 }
 
 class MockedCssAnimation {
-  constructor(private _element) {
+  constructor(private _element: HTMLElement) {
   }
 
   animatesAllProperties(styles): boolean {
@@ -199,10 +266,9 @@ class MockedCssAnimation {
 
 class CssAnimationExpectation {
   constructor(private _assertFn: Function,
-              private _element,
+              private _element: HTMLElement,
               private _registry: CssMap,
-              private _target) {
-  }
+              private _target) {}
 
   toAnimate(): void {
     var initialStyles = Object.keys(normalizeStyleTarget(this._target, this._registry));
@@ -234,15 +300,20 @@ class CssAnimationExpectation {
 }
 
 class CssAnimationMock {
-  private _registry;
-  private _element;
+  private _element: HTMLElement;
 
-  constructor(styles, options = {}) {
-    this._registry = CssMap.from(styles);
+  constructor(private _registry: CssMap,
+      { testElement, assert }:
+      { testElement?: HTMLElement, assert?: Function }) {
     this._element = testElement || prepareTestElement();
+    this._assert = assert || function(a,b) {
+      if (a !== b) {
+        throw new Error("expected " + a + " to be " + b); 
+      }
+    };
   }
 
   expect(target) {
-    return new CssAnimationExpectation(this._element, this._registry, target);
+    return new CssAnimationExpectation(this._assert, this._element, this._registry, target);
   }
 }
