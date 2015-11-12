@@ -1,6 +1,6 @@
 import {CssColor} from "../src/module";
 
-fdescribe("CssColor", () => {
+describe("CssColor", () => {
   describe(".hex", () => {
     it("should return a hex value when constructed with a hex value", () => {
       var c = new CssColor("#224466");
@@ -20,6 +20,14 @@ fdescribe("CssColor", () => {
     it("should return a hex value when constructed from a standard color value", () => {
       var c = new CssColor("blue");
       expect(c.hex).toBe("#0000FF");
+    });
+
+    it("should always return hex values in uppercase format", () => {
+      var c = new CssColor("#abcdef");
+      expect(c.hex).toBe("#ABCDEF");
+
+      c = new CssColor("#abc");
+      expect(c.hex).toBe("#AABBCC");
     });
   });
 
@@ -59,11 +67,11 @@ fdescribe("CssColor", () => {
     });
   });
 
-  describe(".relativeTo", () => {
+  describe(".closeTo", () => {
     it("should return true when the colors are related", () => {
       var c1 = new CssColor("#111");
       var c2 = new CssColor("#222");
-      expect(c1.relativeTo(c2)).toBe(true);
+      expect(c1.closeTo(c2)).toBe(true);
     });
 
     it("should return true when the colors are related by tolerance", () => {
@@ -71,9 +79,13 @@ fdescribe("CssColor", () => {
       var c2 = new CssColor("rgb(0,0,0)");
       var c3 = new CssColor("rgb(255,255,255)");
 
+      // the precision tends to mess up the amount
+      // so having 55% is close enough to go from
+      // start to finish
       var HALF = 0.55;
-      expect(c1.relativeTo(c2, HALF)).toBe(true);
-      expect(c1.relativeTo(c3, HALF)).toBe(true);
+
+      expect(c1.closeTo(c2, HALF)).toBe(true);
+      expect(c1.closeTo(c3, HALF)).toBe(true);
     });
   });
 });

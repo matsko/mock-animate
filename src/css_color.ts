@@ -1,6 +1,6 @@
-import {isString, base16, prepareTestElement} from "./helpers";
+import {isString, base16, prepareTestElement} from "./util";
 
-function percentage(value) {
+function decPercentage(value) {
   if (value <= 1) {
     value = Math.round(value * 100);
   }
@@ -45,11 +45,11 @@ export class CssColor {
     return rgb;
   }
 
-  static equals(c1: CssColor, c2: CssColor): boolean {
+  static areColorsEqual(c1: CssColor, c2: CssColor): boolean {
     return c1.hex == c2.hex;
   }
 
-  static related(c1: CssColor, c2: CssColor, tolerance: number = 0.1): boolean {
+  static areColorsClose(c1: CssColor, c2: CssColor, tolerance: number = 0.1): boolean {
     var rgb1 = c1.rgb;
     var rgb2 = c2.rgb;
 
@@ -61,7 +61,7 @@ export class CssColor {
     var colorMask = twoBytes + twoBytes + twoBytes;
     var difference = Math.sqrt(magnitude) / Math.sqrt(colorMask);
 
-    return percentage(difference) <= percentage(tolerance);
+    return decPercentage(difference) <= decPercentage(tolerance);
   }
 
   /*
@@ -90,11 +90,11 @@ export class CssColor {
   */
 
   equals(color: CssColor): boolean {
-    return CssColor.equals(this, color);
+    return CssColor.areColorsEqual(this, color);
   }
 
-  relativeTo(color: CssColor, tolerance?: number): boolean {
-    return CssColor.related(this, color, tolerance);
+  closeTo(color: CssColor, tolerance?: number): boolean {
+    return CssColor.areColorsClose(this, color, tolerance);
   }
 
   get rgb(): number[] {
