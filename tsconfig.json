@@ -1,0 +1,22 @@
+{
+  "compilerOptions": {
+    "module": "commonjs",
+    "target": "es5",
+    "noImplicitAny": false,
+    "outDir": "build",
+    "rootDir": ".",
+    "sourceMap": true,
+    "declaration": true,
+    "emitDecoratorMetadata": true,
+    "experimentalDecorators": true
+  },
+  "files": [
+    "src/mock.ts",
+    "test/mock_spec.ts",
+    "typings/es6-promise.d.ts",
+    "typings/jasmine.d.ts"
+  ],
+  "exclude": [
+    "node_modules"
+  ]
+}
